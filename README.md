@@ -89,7 +89,6 @@ The project begins with a two-dimensional potential flow solver around a rectang
 ---
 
 ## Notes
-- Tested in GNU Octave 8.4 on a coarser grid (h0 = 0.05) for short runs, and the solver stayed stable. The full default grid and the plotting section were checked less thoroughly.
 - The solid is a staircase on a Cartesian grid, so Cl and Cd are approximate, and the extra corners it creates affect the wake.
 - The sharp corners of the rectangle act as vortex-sheet sources, so the wake and recirculation bubble depend on the numerical dissipation of the scheme and change with h0 and order. Treat the wake size and shape as scheme-dependent, not as a grid-converged physical result.
 - The residual usually plateaus (around 1e-3 in the coarse tests) instead of reaching the tolerance. The run then stops at maxIter, and Cl and Cd may keep oscillating. In that case the "steady" result is one snapshot of an unsteady wake.
@@ -99,4 +98,29 @@ The project begins with a two-dimensional potential flow solver around a rectang
 - The speed of the run is set by the fine cells. Raise h0 or set order = 1 for quick previews.
 - The plotted vector field samples the stretched grid, so the columns downstream look unevenly spaced. That is a plotting effect and not a flow feature.
 - If the solver diverges or oscillates, lower CFL first (0.5 was the value used in testing; the current default is 0.8), then increase nFirst or switch to order = 1.
+---
+# Version 3: 2D Compressible Euler Solver (HLLC FVM)
+
+## Features
+- Solves the 2D compressible Euler equations using a finite-volume method.
+- Selectable Rusanov, HLL and HLLC flux solvers.
+- First- and second-order MUSCL reconstruction with selectable slope limiters.
+- SSP-RK2/RK3 time integration with configurable CFL.
+- Supports rectangle, cylinder, ellipse and NACA 0012 geometries.
+- Adjustable angle of attack and body dimensions.
+- Non-uniform Cartesian grid with refined body and wake regions.
+- Approximate slip-wall and characteristic far-field boundary conditions.
+- Calculates lift, drag, Mach number, pressure coefficient, vorticity and entropy error.
+- Transient flow visualisation with optional frame saving.
+- Estimates vortex-shedding frequency and Strouhal number using Fourier analysis.
+- Generates flow-field plots and convergence histories.
+
+---
+
+## Notes
+- Inviscid Euler model: no physical viscosity, boundary layers, skin friction or viscous separation.
+- Cartesian staircase geometry makes surface forces and near-wall flow grid-dependent.
+- Wake development and vortex shedding depend on numerical dissipation, resolution and initial perturbations.
+- Strouhal-number estimates depend on simulation duration and spectral resolution.
+- Grid convergence and validation are required before treating results as quantitatively reliable.
 ---
