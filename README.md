@@ -124,3 +124,54 @@ The project begins with a two-dimensional potential flow solver around a rectang
 - Strouhal-number estimates depend on simulation duration and spectral resolution.
 - Grid convergence and validation are required before treating results as quantitatively reliable.
 ---
+# Version 4: 2D Compressible Euler Solver (HLLC FVM, body-fitted mesh)
+
+Version 4 splits the code into separate file groups: an input file, a solver, and separate mesh generators (one per geometry). The solver no longer builds its own grid. It reads a mesh produced by a `mesh_*.m` file, so geometries and meshes can change without touching the solver.
+
+
+## Features
+
+* Solves the 2D compressible Euler equations using a cell-centred finite-volume method on a body-fitted quad mesh.
+* Selectable Rusanov, HLL and HLLC flux solvers.
+* First- and second-order MUSCL reconstruction from least-squares gradients, with selectable limiters (minmod, van Leer, MC, van Albada, superbee).
+* SSP-RK2/RK3 time integration with configurable CFL; steady (local time step) or transient (global time step).
+* Supports rectangle, cylinder, ellipse and NACA 0012 geometries.
+* Adjustable angle of attack (the flow is rotated; the mesh stays fixed) and body dimensions.
+* Body-fitted meshes: C-grid for the NACA 0012, O-grids for the other shapes.
+* Curvature- and hot-spot-based node clustering (nose, trailing edge, corners, wake side); wall-normal layers set by first cell height and growth ratio.
+* Slip wall applied as a pressure flux on the exact body surface; characteristic (or freestream) far field.
+* Calculates lift, drag, Mach number, pressure coefficient, surface Cp, vorticity and entropy error.
+* Transient flow visualisation with optional frame saving.
+* Estimates vortex-shedding frequency and Strouhal number using Fourier analysis.
+* Generates flow-field plots and convergence histories.
+
+## Notes
+
+* Inviscid Euler model: no physical viscosity, boundary layers, skin friction or viscous separation.
+* Body-fitted meshes remove the staircase geometry of version 3, so surface forces are taken on the true surface. Results still depend on the mesh.
+* Mesh refinement is geometry-driven, not solution-adaptive: it does not refine from the flow field.
+* O-grid wake resolution (cylinder, ellipse, rectangle) is coarser than in the C-grid NACA wake.
+* Wake development and vortex shedding depend on numerical dissipation, resolution and initial perturbations.
+* Transient runs use explicit time stepping, so the step count is set by the smallest cell. The solver prints an estimate at the start.
+* Strouhal-number estimates depend on simulation duration and spectral resolution.
+* Grid convergence and validation are required before treating results as quantitatively reliable.
+
+* ## Additional Information
+
+Put all files in one folder, then in MATLAB/Octave run:   `run_euler `
+
+Edit settings only in `run_euler.m`. Set `cfg.mesh.meshOnly = true` to preview the mesh without solving.
+
+## File structure
+
+| Group | File | Role |
+|---|---|---|
+| Input | `run_euler.m` | All user settings; builds the mesh, runs the solver, plots |
+| Solver | `euler_solver.m` | Finite-volume Euler solver (fluxes, reconstruction, time marching, boundaries, forces) |
+| Post-processing | `euler_post.m` | Final plots |
+| Mesh (geometry) | `mesh_naca0012.m` | C-grid, sharp trailing edge, wake cut |
+| | `mesh_cylinder.m`, `mesh_ellipse.m`, `mesh_rectangle.m` | O-grids |
+| Mesh (shared tools) | `mesh_ogrid.m` | O-grid builder used by cylinder, ellipse, rectangle |
+| | `mesh_assemble.m` | Converts the node array into cells, faces, normals, neighbours and gradient coefficients for the solver |
+
+---
