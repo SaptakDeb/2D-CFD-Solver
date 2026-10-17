@@ -1,14 +1,4 @@
 function m = mesh_assemble(X, Y, id, isWall, periodic)
-% MESH_ASSEMBLE  Turn a structured node array into the face-based mesh
-% data that the solver uses.
-%   X, Y      node coordinates, (NI nodes) x (NJ nodes)
-%   id        node numbering; nodes that are physically the same point
-%             share an id (this is how a C-grid wake cut is closed)
-%   isWall    true for nodes lying on the body
-%   periodic  true if the last i-cell wraps around to the first node (O-grid)
-%
-% Faces are found from the cell->node table, so the solver does not care
-% whether the mesh came from an O-grid, a C-grid, or something else.
 
 [NIn,NJn] = size(X);
 NIc = NIn - ~periodic;
