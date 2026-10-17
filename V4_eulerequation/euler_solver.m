@@ -1,12 +1,4 @@
 function sol = euler_solver(cfg, m)
-% EULER_SOLVER  2D compressible Euler equations, cell-centred finite volume
-% on a body-fitted quad mesh (any topology produced by the mesh_*.m files).
-%
-%   - face-based fluxes: Rusanov / HLL / HLLC
-%   - MUSCL reconstruction from least-squares gradients, with the TVD
-%     limiters minmod / vanleer / mc / vanalbada / superbee
-%   - SSP Runge-Kutta 2 or 3, steady (local dt) or transient (global dt)
-%   - slip wall by pressure flux on the exact surface, characteristic far field
 
 fl = cfg.flow;  nm = cfg.num;
 gam = fl.gamma;  R = fl.R;
