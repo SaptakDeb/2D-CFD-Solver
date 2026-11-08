@@ -175,3 +175,40 @@ Edit settings only in `run_euler.m`. Set `cfg.mesh.meshOnly = true` to preview t
 | | `mesh_assemble.m` | Converts the node array into cells, faces, normals, neighbours and gradient coefficients for the solver |
 
 ---
+
+
+# Version 5: 2D Compressible Navier-Stokes Solver (HLLC FVM, body-fitted O-grid)
+
+Version 5 keeps the file-group layout of Version 4 (an input file, a solver, and separate mesh generators, one per geometry) and adds viscous terms. The solver does not build its own grid. It reads a mesh produced by a `mesh_*.m` file, so geometries and meshes can change without touching the solver.
+
+## Features
+- Solves the 2D laminar compressible Navier-Stokes equations using a cell-centred finite-volume method on a body-fitted quad O-grid (i around the body, j from the wall to the far field).
+- Selectable Rusanov and HLLC convective fluxes.
+- First- and second-order MUSCL reconstruction (in index space) with selectable limiters (minmod, van Leer, MC, van Albada). A first-order fallback is used wherever the reconstruction would give negative density or pressure.
+- Viscous fluxes from Green-Gauss cell gradients, with face gradients corrected along the cell-to-cell direction to avoid odd-even decoupling.
+- Constant or Sutherland viscosity, constant Prandtl number, and Reynolds number set from the body reference length.
+- No-slip wall, adiabatic or isothermal, with the wall pressure flux applied on the exact body surface.
+- Characteristic (Riemann invariant) far-field boundary condition.
+- SSP-RK2/RK3 time integration with configurable CFL; steady (local time step, including a viscous limit) or transient (global time step). Start-up uses a first-order phase and a CFL ramp.
+- Supports cylinder, ellipse, NACA 00xx (default 0012) and rectangle geometries, each with its own mesh file.
+- Adjustable angle of attack (the geometry and mesh are rotated; the freestream stays along +x) and body dimensions.
+- Wall-normal layers set by the first cell height and a geometric growth ratio. Surface points are clustered at the NACA leading and trailing edges and at the rectangle corners.
+- Calculates lift, drag (split into pressure and friction), Mach number, pressure coefficient, vorticity, wall Cp and wall Cf.
+- Estimates the recirculation length on the rear symmetry line at zero angle of attack.
+- Transient flow visualisation (vorticity, Mach, pressure, density, velocity, temperature) with optional frame saving.
+- Estimates vortex-shedding frequency and Strouhal number using Fourier analysis of the Cl signal and a wake probe.
+- Generates flow-field plots, a mesh view, wall distributions and convergence histories.
+
+---
+
+## Notes
+- Laminar model only: no turbulence model, so it is only meaningful for Reynolds numbers where the flow is laminar (the cylinder is validated against values around Re = 40 to 200). It is also 2D, so there is no three-dimensional shedding.
+- Tested in GNU Octave 8.4 on coarse grids. A steady cylinder at Re = 40 gave a recirculation length of about 2.1 diameters, close to published values, but Cd was still settling and the residual had not converged after 3000 iterations. The NACA 0012, rectangle and ellipse cases at 5 degrees were run for 300 iterations only, and the transient cylinder case was run to t* = 0.5. No long shedding run has been checked.
+- Explicit time stepping with a wall-resolved mesh is stiff: the step is set by the smallest wall cell, so transient runs need on the order of a thousand steps per convective time. Steady mode and coarser grids are much cheaper. The solver does not print a step-count estimate.
+- All geometries use an O-grid, so the wake is coarse far from the body, and vortex shedding may be damped numerically downstream. A C-grid or wake refinement would be needed for a clean vortex street.
+- Straight algebraic grid lines blended toward the wall normal can become skewed at sharp corners (rectangle) and at the NACA trailing edge. The solver stops with an error if a cell has zero area, but it does not check for skewness.
+- Wall resolution matters: the first cell height should be much smaller than the boundary layer thickness (roughly Re^-0.5 times 0.1 of the reference length or less).
+- Mesh refinement is geometry-driven, not solution-adaptive: it does not refine from the flow field.
+- The far-field boundary uses 1D Riemann invariants, which is less accurate if the wake crosses the outer boundary at a steep angle. A larger far-field radius reduces the effect.
+- Strouhal-number estimates depend on simulation duration and spectral resolution.
+- Grid convergence and validation are required before treating results as quantitatively reliable.
