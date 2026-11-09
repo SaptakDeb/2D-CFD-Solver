@@ -212,3 +212,30 @@ Version 5 keeps the file-group layout of Version 4 (an input file, a solver, and
 - The far-field boundary uses 1D Riemann invariants, which is less accurate if the wake crosses the outer boundary at a steep angle. A larger far-field radius reduces the effect.
 - Strouhal-number estimates depend on simulation duration and spectral resolution.
 - Grid convergence and validation are required before treating results as quantitatively reliable.
+
+---
+
+# 2D Cartesian Cut-Cell Mesh Generator (Python, Gmsh)
+
+A standalone 2D mesh generator written in Python. It constructs a Cartesian background grid and clips cells intersecting the body geometry, retaining only the fluid region. Boundary-intersecting cells are subdivided into triangles, allowing the body surface to be represented exactly without requiring a body-fitted coordinate system.
+
+The mesher operates independently of the flow solver and exports Gmsh 2.2 meshes alongside plain-text mesh files compatible with GNU Octave.
+
+## Features
+- Generates a 2D Cartesian quadrilateral background grid with configurable uniform cell size.
+- Supports arbitrary 2D geometries supplied as text files containing x-y coordinate pairs. Header lines are ignored.
+- Clips cells intersecting the body boundary against the fluid region, preserving the exact body surface.
+- Splits clipped boundary cells into triangles while retaining quadrilateral cells in unaffected regions.
+- Supports built-in circle, ellipse, rectangle and NACA 4-digit geometries.
+- Allows geometry rotation through an adjustable angle of attack, with positive angles corresponding to nose-up rotation.
+- Configurable computational domain limits (`xmin`, `xmax`, `ymin`, `ymax`) and background grid spacing (`h`).
+- Exports Gmsh 2.2 `.msh` files with separate physical boundary tags for the body and far-field boundaries.
+- Exports plain-text mesh files (`_nodes.txt`, `_tri.txt`, `_quad.txt` and `_bnd.txt`) for direct loading into GNU Octave.
+- Includes a separate mesh inspection utility for checking cell connectivity, geometry and mesh topology.
+- Detects zero-area and negative-area cells, repeated nodes, duplicate cells, coincident nodes and excessively small cell angles.
+- Checks for edges shared by more than two cells, gaps, hanging nodes and inconsistencies in total fluid-domain area.
+- Returns exit code 1 when mesh errors are detected.
+- Includes a sample NACA 2412 geometry file in Selig coordinate format.
+
+
+
