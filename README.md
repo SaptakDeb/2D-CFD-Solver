@@ -237,5 +237,61 @@ The mesher operates independently of the flow solver and exports Gmsh 2.2 meshes
 - Returns exit code 1 when mesh errors are detected.
 - Includes a sample NACA 2412 geometry file in Selig coordinate format.
 
+---
 
+# Version 6: 2D Compressible Navier-Stokes Solver (unstructured FVM, Gmsh / mesh2d meshes)
+
+Version 6 reads an external mesh instead of building its own grid, and runs on mixed triangle / quad meshes. Settings live in one input file, the solver is separate from the mesh readers, and the built-in O-grid generators of Version 5 are still available as one mesh file per geometry.
+
+## Files
+- `ns_input.m`: all user settings. Run this file.
+- `ns_solver.m`: solver (fluxes, reconstruction, viscous terms, boundary conditions, time stepping, CFL control, forces, plots).
+- `read_mesh.m`: mesh reader (Gmsh ASCII 2.2 / 4.x, `mesh2d.py` text files, or built-in O-grids).
+- `build_fvmesh.m`: cells, edges, ghost cells, boundary classification, gradient weights.
+- `mesh_cylinder.m`, `mesh_ellipse.m`, `mesh_naca0012.m`, `mesh_rectangle.m`, `ogrid_extrude.m`: built-in O-grid generators.
+- `gen_naca0012_gmsh.py`: NACA 0012 mesh with a boundary layer (needs `pip install gmsh numpy`).
+- `testcase_naca0012/`: mesh, two input scripts, reference data, and the results I obtained.
+
+## Features
+- Solves the 2D compressible Navier-Stokes equations (laminar) or the Euler equations (`Re = Inf`) with a cell-centred finite-volume method.
+- Reads Gmsh ASCII meshes (format 2.2 and 4.x), the text files written by `mesh2d.py`, or the built-in structured O-grids, and converts them all to one edge-based form.
+- Triangles and quads in the same mesh.
+- Boundary classification from the physical-group names (wall, body, airfoil, farfield, inlet, outlet ...), from `P.wallTags` / `P.farTags`, or from position if the mesh has no tags.
+- Rusanov or HLLC convective flux.
+- Linear reconstruction from least-squares gradients with a Venkatakrishnan or Barth-Jespersen limiter, and a first-order fallback where the reconstruction would give negative density or pressure.
+- Viscous fluxes from least-squares gradients with corrected face gradients, constant or Sutherland viscosity.
+- Slip wall (Euler), or no-slip adiabatic / isothermal wall. Wall pressure from the limited face reconstruction.
+- Characteristic (Riemann invariant) far-field boundary condition.
+- SSP-RK2 / RK3; steady (local time step, including a viscous limit) or transient (global time step).
+- CFL control with three modes: `off` (fixed CFL with a start-up ramp), `smart` (grows the CFL while steps are accepted, cuts it and rolls the step back on negative density or pressure, NaN, or a residual jump), `ser` (as `smart`, with the CFL also following the residual drop).
+- Steady runs stop on a residual tolerance or when Cl, Cd and Cm vary by less than a set tolerance over a window.
+- Angle of attack rotates the freestream; the mesh stays fixed.
+- Lift, drag (pressure and friction), pitching moment about a chosen point (default quarter chord, positive nose-up), wall Cp and Cf, upper-surface separation point.
+- Mean and half peak-to-peak amplitude of Cl, Cd and Cm over the last iterations.
+- Plots: Mach number, pressure coefficient, vorticity, mesh near the body, wall Cp and Cf, and histories of residual, coefficients and CFL.
+- Transient mode with live plots and optional frame saving.
+
+---
+
+## Test case: NACA 0012, laminar, M = 0.5, Re = 5000
+- Mesh: `testcase_naca0012/naca0012.msh` from `gen_naca0012_gmsh.py` (12,302 cells: 8,396 triangles and 3,906 quads, boundary-layer quads, first cell height 6e-4, far field at 20 chords). The mesh passed `inspect_mesh.py` with no errors and 16 sliver warnings at the trailing edge.
+- Reference: Swanson and Langer, NASA/TM-2016-219003 (finest grid): at alpha = 0 deg Cd 0.0556 (pressure 0.0228, friction 0.0328), separation at x/c 0.808; at alpha = 3 deg Cl 0.0513, Cd 0.0585 (pressure 0.0262, friction 0.0323), separation at x/c 0.464. The report gives no Cm.
+
+| 14,000 iterations, mean of the last 4,000 (± half peak-to-peak) | alpha = 0 deg | alpha = 3 deg |
+|---|---|---|
+| Cl | 0.0002 ± 0.19 | 0.135 ± 0.26 |
+| Cd | 0.0579 ± 0.0084 | 0.0632 ± 0.016 |
+| Cm (about x = 0.25) | 0.0002 ± 0.089 | -0.014 ± 0.10 |
+
+## Notes
+- **The test case did not converge.** The density residual stalled (about 1e-2 at alpha = 0 deg, 0.3 to 0.45 at 3 deg) and Cl and Cm oscillate with large amplitude, so the solver does not reproduce the reference values. The mean Cd at alpha = 0 deg (0.0579) is about 4% above the reference, and friction drag (about 0.033 in the logs) is close to it, but the pressure drag and lift are not reliable. Separation points from the last iteration (0.667 and 0.405) are single snapshots of an oscillating flow.
+- Likely causes, not confirmed: explicit Runge-Kutta stepping with local time steps is a weak solver for this case, the wake mesh is probably too coarse, and the very small fan cells at the trailing edge (area down to about 6e-8) slow the convergence. A real shedding instability cannot be ruled out.
+- The CFL adaptation rejected no step in any run and sat at its cap, because the failure is a slow oscillation, not a positivity loss or residual jump. The rollback path itself has not been exercised. Lowering the CFL cap to 1 and raising the limiter constant to 100 at alpha = 0 deg did not change the behaviour. A test on stagnation of the residual, and implicit time stepping or implicit residual smoothing, are the next steps.
+- Not tested: plotting, the Gmsh 4.x reader, the `mesh2d.py` text-file reader, the built-in O-grid path in this solver, isothermal wall, Sutherland viscosity, transient mode, and the Euler (`Re = Inf`) path. The cylinder at Re = 40 has not been re-run against the structured Version 5 solver, so do not treat this solver as validated.
+- Runs take about 70 s per 1,000 iterations on the 12,300-cell mesh in GNU Octave 8.4 on one core.
+- The angle of attack changes the freestream direction, not the mesh, so the built-in geometries are no longer rotated.
+- Cm and the force coefficients use the reference length found from the wall nodes (the chord for an airfoil). Set `P.Lref` and `P.momentRef` to override.
+- Gmsh files must be ASCII. Binary `.msh` files are rejected.
+- Mesh quality is not checked inside the solver beyond zero or negative cell area and inconsistent orientation. Use `inspect_mesh.py` first.
+- Grid convergence and validation are required before treating results as quantitatively reliable.
 
