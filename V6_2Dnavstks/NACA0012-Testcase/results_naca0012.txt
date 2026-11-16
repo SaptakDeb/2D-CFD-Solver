@@ -1,0 +1,27 @@
+Results of ns2d_v2 on naca0012.msh  (12,302 cells: 8,396 triangles + 3,906 quads)
+=================================================================================
+Settings: M = 0.5, Re = 5000, HLLC, order 2, Venkatakrishnan (K = 3), SSP-RK3,
+          local time step, CFL control 'smart' (start 1.0, cap 3.0), 14000 iterations.
+Octave 8.4, about 1000 s per case on one core.
+
+NOT converged: the density residual stalled (about 1e-2 at alpha = 0, 0.3 - 0.45 at alpha = 3)
+and Cl / Cm kept oscillating. The CFL control rejected no step in either run.
+
+Mean over the last 4000 iterations (+- half peak-to-peak)
+
+                        alpha = 0 deg                 alpha = 3 deg
+  Cl                    0.0002  +- 0.191              0.135  +- 0.256
+  Cd                    0.0579  +- 0.0084             0.0632 +- 0.0160
+  Cm (about x = 0.25)   0.0002  +- 0.089             -0.014  +- 0.101
+
+Last-iteration snapshot (one instant of an oscillating solution)
+
+  Cl                    0.0607                       -0.1093
+  Cd                    0.0640 (p 0.0300, f 0.0340)   0.0469 (p 0.0140, f 0.0329)
+  Cm                    0.0182                       -0.1086
+  x_sep / c (upper)     0.667                         0.405
+
+Reference (NASA/TM-2016-219003): see reference_data.txt
+  alpha = 0: Cd 0.0556 (p 0.0228, f 0.0328), x_sep/c 0.808
+  alpha = 3: Cl 0.0513, Cd 0.0585 (p 0.0262, f 0.0323), x_sep/c 0.464
+  Cm: no reference value available

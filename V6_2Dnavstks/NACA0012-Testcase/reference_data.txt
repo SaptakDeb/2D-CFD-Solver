@@ -1,0 +1,24 @@
+Reference data for the NACA 0012 laminar test cases
+====================================================
+Source: Swanson, R. C. and Langer, S., "Steady-State Laminar Flow Solutions for NACA 0012
+        Airfoil", NASA/TM-2016-219003 (2016), https://ntrs.nasa.gov/citations/20160003623
+        Finest-grid values (structured 1024 x 512 grid, matrix dissipation scheme).
+
+Freestream: M = 0.5, Re = 5000 (chord based), laminar, Pr = 0.72
+
+Case 1: alpha = 0 deg
+    Cl          ~ 0   (symmetric)
+    Cd          = 0.05557
+    Cd pressure = 0.02279
+    Cd friction = 0.03279
+    x_sep / c   = 0.8083   (upper surface separation point)
+
+Case 4: alpha = 3 deg
+    Cl          = 0.05133
+    Cd          = 0.05851
+    Cd pressure = 0.02620
+    Cd friction = 0.03231
+    x_sep / c   = 0.4639   (upper surface)
+
+Cm: the report does not tabulate a pitching moment, so there is no reference Cm.
+    At alpha = 0 deg Cm must be 0 by symmetry.
